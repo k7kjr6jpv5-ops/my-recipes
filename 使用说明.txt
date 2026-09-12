@@ -1,0 +1,19 @@
+我的菜谱 PWA 手机版
+
+文件：
+- index.html：主程序
+- manifest.webmanifest：PWA 配置
+- sw.js：离线缓存
+- icon-192.png / icon-512.png：手机主屏幕图标
+
+iPhone 使用：
+1. 将整个文件夹上传到支持 HTTPS 的网站（例如 GitHub Pages / Cloudflare Pages）。
+2. 用 iPhone Safari 打开网站。
+3. 点 Safari 底部“分享”按钮。
+4. 选择“添加到主屏幕”。
+5. 以后从主屏幕直接打开“我的菜谱”。
+
+注意：
+- 直接双击本地 HTML 可以使用网页，但不能完整启用 PWA 安装与 Service Worker。
+- 菜谱数据仍保存在当前浏览器的 IndexedDB 中。
+- 跨电脑 / iPhone 同步仍需要后续增加云同步功能。
