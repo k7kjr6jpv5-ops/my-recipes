@@ -425,9 +425,89 @@ body.night .primary-safe{background:linear-gradient(135deg,#b98739,#d5ae66);colo
   .card p{font-size:10px}
 }
 
+
+/* mobile category chips */
+.mobile-cats{display:none}
+@media(max-width:900px){
+  .mobile-cats{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:2px 0 12px;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .mobile-cats::-webkit-scrollbar{display:none}
+  .mobile-cat-chip{
+    flex:0 0 auto;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--text);
+    border-radius:999px;
+    padding:8px 12px;
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .mobile-cat-chip.active{
+    background:var(--soft);
+    color:var(--gold);
+    border-color:color-mix(in srgb,var(--gold) 35%,var(--line));
+    font-weight:800;
+  }
+}
+
+/* mobile recipe detail */
+.mobile-detail-overlay{
+  position:fixed;inset:0;z-index:1000001;
+  background:var(--bg);
+  display:block;
+}
+.mobile-detail-overlay[hidden]{display:none!important}
+.mobile-detail-card{height:100%;display:flex;flex-direction:column;background:var(--bg)}
+.mobile-detail-topbar{
+  height:58px;flex:0 0 auto;
+  display:grid;grid-template-columns:60px 1fr 60px;align-items:center;
+  padding-top:env(safe-area-inset-top);
+  border-bottom:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 96%,transparent);
+  backdrop-filter:blur(14px);
+}
+.mobile-detail-topbar strong{text-align:center;font-size:15px}
+.mobile-detail-topbar button{border:0;background:transparent;color:var(--text);font-size:16px}
+#mobileDetailBack{font-size:34px;line-height:1}
+#mobileDetailDelete{color:#b85d45;font-size:12px}
+.mobile-detail-scroll{
+  overflow:auto;
+  padding:14px 14px calc(28px + env(safe-area-inset-bottom));
+}
+.mobile-detail-photo{
+  display:block;position:relative;height:240px;border-radius:18px;overflow:hidden;
+  background:var(--panel2);border:1px solid var(--line);
+}
+.mobile-detail-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.mobile-detail-photo span{
+  position:absolute;right:12px;bottom:12px;
+  padding:7px 10px;border-radius:999px;background:rgba(32,24,18,.58);color:white;font-size:11px
+}
+.mobile-detail-title-row{display:flex;align-items:center;gap:10px;margin:16px 0 10px}
+.mobile-edit.title{font-size:24px;font-weight:900;outline:none;min-width:0;flex:1}
+.mobile-tag{padding:6px 9px;border-radius:999px;background:var(--soft);color:var(--gold);font-size:11px}
+.mobile-detail-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mobile-detail-meta label{display:flex;flex-direction:column;gap:5px}
+.mobile-detail-meta span{font-size:10px;color:var(--muted)}
+.mobile-detail-meta input,
+.mobile-detail-section textarea{
+  width:100%;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);color:var(--text);padding:10px 11px;outline:none
+}
+.mobile-detail-section{margin-top:18px}
+.mobile-detail-section h3{font-size:14px;margin:0 0 8px}
+.mobile-detail-section textarea{resize:vertical;line-height:1.7;font-size:14px}
+
 </style>
 
 <meta name="theme-color" content="#f7f4ee">
+<meta name="application-version" content="mobile-fix-2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="我的菜谱">
@@ -502,7 +582,8 @@ body.night .primary-safe{background:linear-gradient(135deg,#b98739,#d5ae66);colo
  </section>
 
  <div class="toolbar search-only-toolbar"><div class="search-wrap"><span class="search-icon">⌕</span><input id="search" class="search" placeholder="搜索菜谱、食材或关键词…"></div></div>
- <div class="grid" id="grid"></div>
+ <div class="mobile-cats" id="mobileCats"></div>
+<div class="grid" id="grid"></div>
 
  
 </main>
@@ -586,6 +667,118 @@ body.night .primary-safe{background:linear-gradient(135deg,#b98739,#d5ae66);colo
         </div>
 
         <div class="cfg-tip">建议在升级网页、批量录入或更换电脑前进行一次完整备份。</div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="quickAddOverlay" class="quick-overlay" hidden>
+  <div class="quick-sheet">
+    <div class="quick-handle"></div>
+    <div class="quick-head">
+      <div>
+        <div class="quick-kicker">QUICK RECIPE</div>
+        <h2>快速记录菜谱</h2>
+        <p>拍照 + 几行文字即可保存</p>
+      </div>
+      <button id="quickCloseBtn" class="quick-close" type="button">×</button>
+    </div>
+
+    <div class="quick-body">
+      <label class="quick-photo" for="quickPhotoInput">
+        <img id="quickPhotoPreview" alt="">
+        <span id="quickPhotoText">📷 拍照 / 选择图片</span>
+      </label>
+      <input id="quickPhotoInput" type="file" accept="image/*" capture="environment" hidden aria-label="拍照或选择图片">
+
+      <label class="quick-field">
+        <span>菜名</span>
+        <input id="quickName" placeholder="例如：番茄炒蛋">
+      </label>
+
+      <label class="quick-field">
+        <span>分类</span>
+        <select id="quickCategory"></select>
+      </label>
+
+      <label class="quick-field">
+        <span>食材</span>
+        <textarea id="quickIngredients" rows="4" placeholder="番茄 2个&#10;鸡蛋 3个&#10;盐 适量"></textarea>
+      </label>
+
+      <label class="quick-field">
+        <span>做法</span>
+        <textarea id="quickSteps" rows="5" placeholder="1. 番茄切块。&#10;2. 鸡蛋炒熟盛出。&#10;3. 下番茄炒软后回锅。"></textarea>
+      </label>
+
+      <div class="quick-mini-grid">
+        <label class="quick-field"><span>时间</span><input id="quickTime" placeholder="20分钟"></label>
+        <label class="quick-field"><span>难度</span><input id="quickDifficulty" placeholder="简单"></label>
+        <label class="quick-field"><span>人数</span><input id="quickServings" placeholder="2人"></label>
+      </div>
+
+      <button id="quickSaveBtn" class="quick-save" type="button">保存菜谱</button>
+    </div>
+  </div>
+</div>
+
+<nav class="mobile-nav" aria-label="手机导航">
+  <button type="button" data-mobile-action="home" class="active">
+    <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg><span>首页</span>
+  </button>
+  <button type="button" data-mobile-action="search">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>搜索</span>
+  </button>
+  <button type="button" id="mobileAddBtn" class="mobile-add">
+    <span>＋</span>
+  </button>
+  <button type="button" data-mobile-action="today">
+    <svg viewBox="0 0 24 24"><path d="M5 10h14a7 7 0 0 1-14 0z"/><path d="M8 5c0 1 1 1 1 2M12 4c0 1 1 1 1 2M16 5c0 1 1 1 1 2"/></svg><span>今日</span>
+  </button>
+  <button type="button" data-mobile-action="settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.8-1L14.4 3h-4.8l-.4 3.1a7 7 0 0 0-1.8 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a7 7 0 0 0 1.8 1l.4 3.1h4.8l.4-3.1a7 7 0 0 0 1.8-1l2.4 1 2-3.4L18.9 13a7 7 0 0 0 .1-1z"/></svg><span>设置</span>
+  </button>
+</nav>
+
+
+<div id="mobileDetailOverlay" class="mobile-detail-overlay" hidden>
+  <div class="mobile-detail-card">
+    <div class="mobile-detail-topbar">
+      <button id="mobileDetailBack" type="button">‹</button>
+      <strong>菜谱详情</strong>
+      <button id="mobileDetailDelete" type="button">删除</button>
+    </div>
+    <div class="mobile-detail-scroll">
+      <label class="mobile-detail-photo" for="mobileDetailImageInput">
+        <img id="mobileDetailImage" alt="">
+        <span>点击图片更换</span>
+      </label>
+      <input id="mobileDetailImageInput" type="file" accept="image/*" capture="environment" hidden>
+
+      <div class="mobile-detail-title-row">
+        <div id="mobileDetailName" class="mobile-edit title" contenteditable="true"></div>
+        <span id="mobileDetailCategory" class="mobile-tag"></span>
+      </div>
+
+      <div class="mobile-detail-meta">
+        <label><span>时间</span><input id="mobileDetailTime"></label>
+        <label><span>难度</span><input id="mobileDetailDifficulty"></label>
+        <label><span>人数</span><input id="mobileDetailServings"></label>
+      </div>
+
+      <section class="mobile-detail-section">
+        <h3>食材</h3>
+        <textarea id="mobileDetailIngredients" rows="7"></textarea>
+      </section>
+
+      <section class="mobile-detail-section">
+        <h3>做法</h3>
+        <textarea id="mobileDetailSteps" rows="10"></textarea>
+      </section>
+
+      <section class="mobile-detail-section">
+        <h3>备注</h3>
+        <textarea id="mobileDetailNotes" rows="4"></textarea>
       </section>
     </div>
   </div>
@@ -715,29 +908,44 @@ async function clearStoredImages(){
 
 async function makeImageFallback(blob,maxW=520,maxH=390,quality=.58){
   try{
-    const bmp=await createImageBitmap(blob);
-    let w=bmp.width,h=bmp.height;
+    const obj=await loadCanvasSource(blob);
+    let w=obj.width,h=obj.height;
     const scale=Math.min(1,maxW/w,maxH/h);
     w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
     const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-    canvas.getContext('2d').drawImage(bmp,0,0,w,h);
+    canvas.getContext('2d').drawImage(obj.source,0,0,w,h);
     const thumb=await new Promise(r=>canvas.toBlob(r,'image/jpeg',quality));
-    bmp.close?.();
+    obj.cleanup();
     return await blobToDataURL(thumb||blob);
   }catch(e){
     return await blobToDataURL(blob);
   }
 }
 
+async function loadCanvasSource(file){
+  if('createImageBitmap' in window){
+    try{
+      const bmp=await createImageBitmap(file);
+      return {source:bmp,width:bmp.width,height:bmp.height,cleanup:()=>bmp.close?.()};
+    }catch(e){}
+  }
+  return await new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>resolve({source:img,width:img.naturalWidth,height:img.naturalHeight,cleanup:()=>URL.revokeObjectURL(url)});
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('IMAGE_LOAD_FAILED'));};
+    img.src=url;
+  });
+}
 async function compressImageFile(file,maxW=1400,maxH=1000,quality=.78){
-  const bmp=await createImageBitmap(file);
-  let w=bmp.width,h=bmp.height;
+  const obj=await loadCanvasSource(file);
+  let w=obj.width,h=obj.height;
   const scale=Math.min(1,maxW/w,maxH/h);
   w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
   const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-  const ctx=canvas.getContext('2d');ctx.drawImage(bmp,0,0,w,h);
+  canvas.getContext('2d').drawImage(obj.source,0,0,w,h);
   const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',quality));
-  bmp.close?.();
+  obj.cleanup();
   return blob||file;
 }
 async function ensureRecipeImageURL(recipe){
@@ -1244,81 +1452,114 @@ document.querySelectorAll('[data-mobile-action]').forEach(btn=>{
 });
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));
 }
+
+
+function renderMobileCats(){
+  const items=['全部',...new Set(recipes.map(r=>r.category).filter(Boolean))];
+  const box=$('#mobileCats');
+  if(!box)return;
+  box.innerHTML=items.map(c=>`<button class="mobile-cat-chip ${cat===c?'active':''}" data-mcat="${c}">${c}</button>`).join('');
+  box.querySelectorAll('[data-mcat]').forEach(b=>b.onclick=()=>{
+    cat=b.dataset.mcat;
+    sideView='all';
+    renderMobileCats();
+    renderGrid();
+  });
+}
+
+let mobileDetailId=null;
+function currentMobileRecipe(){return recipes.find(r=>r.id===mobileDetailId)}
+async function openMobileDetail(id){
+  const r=recipes.find(x=>x.id===id); if(!r)return;
+  mobileDetailId=id;
+  const url=await ensureRecipeImageURL(r);
+  $('#mobileDetailImage').src=url||'';
+  $('#mobileDetailName').innerText=r.name||'';
+  $('#mobileDetailCategory').innerText=r.category||'未分类';
+  $('#mobileDetailTime').value=r.time||'';
+  $('#mobileDetailDifficulty').value=r.difficulty||'';
+  $('#mobileDetailServings').value=r.servings||'';
+  $('#mobileDetailIngredients').value=r.ingredients||'';
+  $('#mobileDetailSteps').value=r.steps||'';
+  $('#mobileDetailNotes').value=r.notes||'';
+  $('#mobileDetailOverlay').hidden=false;
+  document.body.style.overflow='hidden';
+}
+function closeMobileDetail(){
+  $('#mobileDetailOverlay').hidden=true;
+  document.body.style.overflow='';
+}
+function saveMobileDetail(){
+  const r=currentMobileRecipe(); if(!r)return;
+  r.name=$('#mobileDetailName').innerText.trim()||r.name;
+  r.time=$('#mobileDetailTime').value.trim();
+  r.difficulty=$('#mobileDetailDifficulty').value.trim();
+  r.servings=$('#mobileDetailServings').value.trim();
+  r.ingredients=$('#mobileDetailIngredients').value;
+  r.steps=$('#mobileDetailSteps').value;
+  r.notes=$('#mobileDetailNotes').value;
+  r.updatedAt=Date.now();
+  save();
+  renderGrid();
+  renderSide();
+  renderMobileCats();
+}
+$('#mobileDetailBack').onclick=()=>{saveMobileDetail();closeMobileDetail();};
+['mobileDetailName','mobileDetailTime','mobileDetailDifficulty','mobileDetailServings','mobileDetailIngredients','mobileDetailSteps','mobileDetailNotes'].forEach(id=>{
+  const el=$('#'+id);
+  if(el)el.addEventListener(el.tagName==='INPUT'||el.tagName==='TEXTAREA'?'input':'input',()=>{
+    clearTimeout(el._saveTimer);
+    el._saveTimer=setTimeout(saveMobileDetail,350);
+  });
+});
+$('#mobileDetailImageInput').onchange=async e=>{
+  const f=e.target.files?.[0]; if(!f)return;
+  const r=currentMobileRecipe(); if(!r)return;
+  try{
+    const blob=await compressImageFile(f);
+    const fallback=await makeImageFallback(blob);
+    const key='img:'+r.id;
+    try{await putImage(key,blob);}catch(err){}
+    if(r.imageObjectURL)URL.revokeObjectURL(r.imageObjectURL);
+    r.imageKey=key;r.image=fallback;r.imageFallback=fallback;r.imageObjectURL=URL.createObjectURL(blob);
+    $('#mobileDetailImage').src=r.imageObjectURL;
+    save();renderGrid();
+  }catch(err){alert('图片处理失败，请重试。');}
+};
+$('#mobileDetailDelete').onclick=()=>{
+  const r=currentMobileRecipe(); if(!r)return;
+  if(!confirm(`确定删除“${r.name}”吗？`))return;
+  if(r.imageKey)deleteImage(r.imageKey).catch(()=>{});
+  recipes=recipes.filter(x=>x.id!==r.id);
+  save();
+  closeMobileDetail();
+  renderSide();renderMobileCats();renderGrid();mealPlan();
+};
+
+const desktopShowDetail=showDetail;
+window.showDetail=function(id){
+  if(window.matchMedia('(max-width:900px)').matches){
+    openMobileDetail(id);
+  }else{
+    desktopShowDetail(id);
+  }
+};
+
+const originalRenderSide=renderSide;
+renderSide=function(){
+  originalRenderSide();
+  renderMobileCats();
+};
 
 initDate();
 startupDataSafety();
+renderMobileCats();
 
 </script>
 
-<div id="quickAddOverlay" class="quick-overlay" hidden>
-  <div class="quick-sheet">
-    <div class="quick-handle"></div>
-    <div class="quick-head">
-      <div>
-        <div class="quick-kicker">QUICK RECIPE</div>
-        <h2>快速记录菜谱</h2>
-        <p>拍照 + 几行文字即可保存</p>
-      </div>
-      <button id="quickCloseBtn" class="quick-close" type="button">×</button>
-    </div>
 
-    <div class="quick-body">
-      <label class="quick-photo" for="quickPhotoInput">
-        <img id="quickPhotoPreview" alt="">
-        <span id="quickPhotoText">📷 拍照 / 选择图片</span>
-      </label>
-      <input id="quickPhotoInput" type="file" accept="image/*" capture="environment" hidden>
-
-      <label class="quick-field">
-        <span>菜名</span>
-        <input id="quickName" placeholder="例如：番茄炒蛋">
-      </label>
-
-      <label class="quick-field">
-        <span>分类</span>
-        <select id="quickCategory"></select>
-      </label>
-
-      <label class="quick-field">
-        <span>食材</span>
-        <textarea id="quickIngredients" rows="4" placeholder="番茄 2个&#10;鸡蛋 3个&#10;盐 适量"></textarea>
-      </label>
-
-      <label class="quick-field">
-        <span>做法</span>
-        <textarea id="quickSteps" rows="5" placeholder="1. 番茄切块。&#10;2. 鸡蛋炒熟盛出。&#10;3. 下番茄炒软后回锅。"></textarea>
-      </label>
-
-      <div class="quick-mini-grid">
-        <label class="quick-field"><span>时间</span><input id="quickTime" placeholder="20分钟"></label>
-        <label class="quick-field"><span>难度</span><input id="quickDifficulty" placeholder="简单"></label>
-        <label class="quick-field"><span>人数</span><input id="quickServings" placeholder="2人"></label>
-      </div>
-
-      <button id="quickSaveBtn" class="quick-save" type="button">保存菜谱</button>
-    </div>
-  </div>
-</div>
-
-<nav class="mobile-nav" aria-label="手机导航">
-  <button type="button" data-mobile-action="home" class="active">
-    <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg><span>首页</span>
-  </button>
-  <button type="button" data-mobile-action="search">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>搜索</span>
-  </button>
-  <button type="button" id="mobileAddBtn" class="mobile-add">
-    <span>＋</span>
-  </button>
-  <button type="button" data-mobile-action="today">
-    <svg viewBox="0 0 24 24"><path d="M5 10h14a7 7 0 0 1-14 0z"/><path d="M8 5c0 1 1 1 1 2M12 4c0 1 1 1 1 2M16 5c0 1 1 1 1 2"/></svg><span>今日</span>
-  </button>
-  <button type="button" data-mobile-action="settings">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.8-1L14.4 3h-4.8l-.4 3.1a7 7 0 0 0-1.8 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a7 7 0 0 0 1.8 1l.4 3.1h4.8l.4-3.1a7 7 0 0 0 1.8-1l2.4 1 2-3.4L18.9 13a7 7 0 0 0 .1-1z"/></svg><span>设置</span>
-  </button>
-</nav>
 
 </body>
 </html>
