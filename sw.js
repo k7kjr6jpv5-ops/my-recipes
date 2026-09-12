@@ -1,4 +1,4 @@
-const CACHE='my-recipe-pwa-v4';
+const CACHE='my-recipe-pwa-cloud-v2';
 const ASSETS=['./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
